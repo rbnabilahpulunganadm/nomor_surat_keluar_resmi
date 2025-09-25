@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Surat Klinik Cerdas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .tab-active {
+            border-bottom-color: #ec4899;
+            color: #ec4899;
+            font-weight: 600;
+        }
+        .tab-inactive {
+            border-bottom-color: transparent;
+            color: #6b7280;
+        }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #f472b6; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #ec4899; }
+        .form-label { display: block; font-size: 0.875rem; font-weight: 500; color: #475569; margin-bottom: 4px; }
+        .form-input { width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; transition: all 0.2s; }
+        .form-input:focus { outline: none; border-color: #ec4899; box-shadow: 0 0 0 2px #f472b633; }
+        .form-section { border-left: 4px solid #ec4899; padding-left: 12px; margin: 16px 0; }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800">
+
+    <div id="app-container" class="max-w-xl mx-auto bg-white min-h-screen shadow-2xl">
+
+        <!-- Header -->
+        <header class="bg-pink-600 text-white p-4 shadow-md sticky top-0 z-20 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <i data-lucide="file-check-2" class="w-8 h-8"></i>
+                <div>
+                    <h1 class="text-xl font-bold">Klinik Nabilah Pulungan</h1>
+                    <p class="text-sm opacity-90">Sistem Pencatatan Surat Cerdas</p>
+                </div>
+            </div>
+        </header>
+
+        <!-- Tab Navigation -->
+        <nav class="flex border-b border-slate-200 sticky top-[80px] bg-white z-20">
+            <button id="tab-app" class="flex-1 py-3 text-center text-sm font-medium border-b-2 tab-active">
+                <i data-lucide="file-plus-2" class="w-4 h-4 mx-auto mb-1"></i>Buat Surat
+            </button>
+            <button id="tab-history" class="flex-1 py-3 text-center text-sm font-medium border-b-2 tab-inactive">
+                 <i data-lucide="history" class="w-4 h-4 mx-auto mb-1"></i>Riwayat
+            </button>
+            <button id="tab-report" class="flex-1 py-3 text-center text-sm font-medium border-b-2 tab-inactive">
+                <i data-lucide="bar-chart-3" class="w-4 h-4 mx-auto mb-1"></i>Laporan
+            </button>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="p-4">
+            <!-- App Tab Content: Smart Form -->
+            <div id="content-app">
+                <section id="form-section">
+                    <div class="bg-white p-4 rounded-lg border border-slate-200">
+                        <h2 class="text-lg font-semibold mb-4 text-slate-700">Formulir Isian Cerdas</h2>
+                        <form id="smart-form" class="space-y-4">
+                            <div>
+                                <label for="letter-type-select" class="form-label">Pilih Jenis Surat</label>
+                                <select id="letter-type-select" class="form-input bg-white" required>
+                                    <option value="" disabled selected>-- Pilih jenis surat --</option>
+                                    <option value="SKS">Surat Keterangan Sehat</option>
+                                    <option value="SKT">Surat Keterangan Sakit</option>
+                                    <option value="SKH">Surat Keterangan Hamil</option>
+                                    <option value="SKB">Surat Keterangan Bersalin</option>
+                                    <option value="SKL">Surat Keterangan Lahir</option>
+                                    <option value="SKK">Surat Keterangan Kerja</option>
+                                    <option value="SKBK">Surat Keterangan Berhenti Bekerja</option>
+                                    <option value="SR">Surat Rujukan</option>
+                                    <option value="SL">Lainnya</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Dynamic fields will be injected here -->
+                            <div id="dynamic-form-fields" class="space-y-4 border-t border-slate-200 pt-4">
+                                <p class="text-center text-slate-500">Pilih jenis surat untuk menampilkan form isian.</p>
+                            </div>
+
+                            <button type="submit" id="submit-button" class="w-full bg-pink-600 text-white font-bold py-3 px-4 rounded-md hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 flex items-center justify-center space-x-2 transition-all duration-300 transform active:scale-95">
+                                <i data-lucide="plus-circle" class="w-5 h-5"></i>
+                                <span>Buat & Simpan Nomor</span>
+                            </button>
+                        </form>
+                    </div>
+                </section>
+            </div>
+
+            <!-- History Tab Content -->
+            <div id="content-history" class="hidden">
+                <section id="history-section">
+                     <div class="flex justify-between items-center mb-3">
+                        <h2 class="text-lg font-semibold text-slate-700">Riwayat Surat</h2>
+                        <button id="refresh-history" class="p-2 text-slate-500 hover:bg-slate-100 rounded-full"><i data-lucide="rotate-cw" class="w-4 h-4"></i></button>
+                    </div>
+                    <div id="history-list" class="space-y-3 custom-scrollbar" style="max-height: calc(100vh - 200px); overflow-y: auto; padding-right: 8px;">
+                        <!-- History items will be injected here -->
+                    </div>
+                    <div id="history-placeholder" class="text-center py-10">
+                        <i data-lucide="loader-2" class="w-12 h-12 text-slate-400 mx-auto animate-spin"></i>
+                        <p class="mt-4 text-slate-500">Memuat riwayat surat...</p>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Report Tab Content -->
+            <div id="content-report" class="hidden">
+                <div class="space-y-6">
+                    <div>
+                        <h3 class="text-md font-semibold text-slate-700 mb-2">Surat Diterbitkan per Bulan</h3>
+                        <div class="bg-white p-3 rounded-lg border border-slate-200">
+                             <canvas id="monthly-chart"></canvas>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="text-md font-semibold text-slate-700 mb-2">Distribusi Jenis Surat</h3>
+                        <div class="bg-white p-3 rounded-lg border border-slate-200">
+                            <canvas id="type-chart"></canvas>
+                        </div>
+                    </div>
+                     <div id="report-placeholder" class="text-center py-10 hidden">
+                        <i data-lucide="loader-2" class="w-12 h-12 text-slate-400 mx-auto animate-spin"></i>
+                        <p class="mt-4 text-slate-500">Memproses data laporan...</p>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Details Modal -->
+    <div id="details-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] flex flex-col">
+            <div class="p-4 border-b flex justify-between items-center">
+                <h3 class="text-lg font-bold" id="details-modal-title">Detail Surat</h3>
+                <button id="close-details-modal" class="p-1 rounded-full hover:bg-slate-200"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div id="details-modal-content" class="p-4 overflow-y-auto space-y-3 custom-scrollbar">
+                <!-- Details will be injected here -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-800 text-white py-2 px-5 rounded-lg shadow-lg opacity-0 transform translate-y-10 transition-all duration-300 z-[100]">
+        <p id="toast-message">Pesan notifikasi</p>
+    </div>
+
+    <script type="module">
+        // =================================================================================
+        // == KONFIGURASI PENTING ==========================================================
+        // =================================================================================
+        // GANTI DENGAN URL WEB APP ANDA DARI HASIL DEPLOYMENT GOOGLE APPS SCRIPT
+        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbx4b6mduHSx6a1YO79ZF17zESyBipKra-iPtHIilNrDgPk1JOoqzEIQ31nkbGWcG9XTiw/exec';
+        // =================================================================================
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- STATE MANAGEMENT ---
+            let isLoading = false;
+            let historyDataCache = [];
+            let monthlyChartInstance = null;
+            let typeChartInstance = null;
+
+            // --- DOM ELEMENTS ---
+            const tabs = {
+                app: document.getElementById('tab-app'),
+                history: document.getElementById('tab-history'),
+                report: document.getElementById('tab-report'),
+            };
+            const contents = {
+                app: document.getElementById('content-app'),
+                history: document.getElementById('content-history'),
+                report: document.getElementById('content-report'),
+            };
+            const historyList = document.getElementById('history-list');
+            const historyPlaceholder = document.getElementById('history-placeholder');
+            const reportPlaceholder = document.getElementById('report-placeholder');
+            const smartForm = document.getElementById('smart-form');
+            const submitButton = document.getElementById('submit-button');
+            const letterTypeSelect = document.getElementById('letter-type-select');
+            const dynamicFieldsContainer = document.getElementById('dynamic-form-fields');
+            const refreshHistoryBtn = document.getElementById('refresh-history');
+            const detailsModal = document.getElementById('details-modal');
+            const closeDetailsModalBtn = document.getElementById('close-details-modal');
+            const detailsModalContent = document.getElementById('details-modal-content');
+            const detailsModalTitle = document.getElementById('details-modal-title');
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+
+            // --- UTILITY & API FUNCTIONS ---
+            const apiCall = async (action, payload = {}) => {
+                if (WEB_APP_URL.includes('PASTE_YOUR_WEB_APP_URL_HERE') || !WEB_APP_URL) {
+                    showToast('Error: URL Web App belum diatur.', 'error');
+                    return;
+                }
+                isLoading = true;
+                updateSubmitButtonState();
+                try {
+                    const response = await fetch(WEB_APP_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({ action, ...payload }),
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    });
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    const result = await response.json();
+                    if (result.status === 'success') return result.data;
+                    throw new Error(result.message || 'Terjadi kesalahan pada server.');
+                } catch (error) {
+                    console.error('API Call Failed:', error);
+                    showToast(error.message, 'error');
+                } finally {
+                    isLoading = false;
+                    updateSubmitButtonState();
+                }
+            };
+
+            const showToast = (message, type = 'success') => {
+                toastMessage.textContent = message;
+                toast.className = `fixed bottom-5 right-5 text-white py-2 px-5 rounded-lg shadow-lg transition-all duration-300 z-[100] ${type === 'error' ? 'bg-red-600' : 'bg-slate-800'}`;
+                toast.classList.remove('opacity-0', 'translate-y-10');
+                setTimeout(() => {
+                    toast.classList.add('opacity-0', 'translate-y-10');
+                }, 3000);
+            };
+
+            const updateSubmitButtonState = () => {
+                if (isLoading) {
+                    submitButton.disabled = true;
+                    submitButton.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i><span>Memproses...</span>`;
+                } else {
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = `<i data-lucide="plus-circle" class="w-5 h-5"></i><span>Buat & Simpan Nomor</span>`;
+                }
+                lucide.createIcons();
+            };
+
+            // --- TAB SWITCHING LOGIC ---
+            const switchTab = (tabName) => {
+                Object.keys(tabs).forEach(key => {
+                    const isActive = key === tabName;
+                    tabs[key].classList.toggle('tab-active', isActive);
+                    tabs[key].classList.toggle('tab-inactive', !isActive);
+                    contents[key].classList.toggle('hidden', !isActive);
+                });
+                if (tabName === 'report' && historyDataCache.length > 0) {
+                    renderCharts();
+                }
+            };
+
+            // --- DYNAMIC FORM LOGIC ---
+            const renderDynamicFields = (type) => {
+                let html = '';
+                const today = new Date().toISOString().split('T')[0];
+                const commonPatientFields = `
+                    <div><label class="form-label">Nama Pasien/Klien</label><input type="text" id="nama" class="form-input" required></div>
+                    <div><label class="form-label">Tanggal Lahir</label><input type="date" id="tgl_lahir" class="form-input" onchange="document.dispatchEvent(new Event('calculateAge'))"></div>
+                    <div><label class="form-label">Usia</label><input type="text" id="usia" class="form-input bg-slate-100" readonly></div>
+                    <div><label class="form-label">Jenis Kelamin</label><select id="jenis_kelamin" class="form-input bg-white"><option>Laki-laki</option><option>Perempuan</option></select></div>
+                    <div><label class="form-label">Pekerjaan</label><input type="text" id="pekerjaan" class="form-input"></div>
+                    <div><label class="form-label">Alamat</label><textarea id="alamat" class="form-input" rows="2"></textarea></div>
+                    <div><label class="form-label">Tanggal Surat</label><input type="date" id="tanggal_surat" value="${today}" class="form-input" required></div>
+                `;
+
+                switch (type) {
+                    case 'SKS': case 'SKT': case 'SKH': case 'SKB':
+                        html = `
+                            ${commonPatientFields}
+                            <div class="form-section">
+                                <h4 class="text-md font-semibold text-slate-600">Pemeriksaan Medis</h4>
+                                <div class="grid grid-cols-2 gap-4 mt-2">
+                                    <div><label class="form-label">Berat Badan (kg)</label><input type="number" id="bb" class="form-input"></div>
+                                    <div><label class="form-label">Tinggi Badan (cm)</label><input type="number" id="tb" class="form-input"></div>
+                                    <div><label class="form-label">Tekanan Darah</label><input type="text" id="tensi" class="form-input" placeholder="120/80"></div>
+                                    <div><label class="form-label">Golongan Darah</label><input type="text" id="goldar" class="form-input"></div>
+                                </div>
+                                <div class="mt-2"><label class="form-label">Riwayat Penyakit</label><textarea id="riwayat_penyakit" class="form-input" rows="2"></textarea></div>
+                                ${ type === 'SKT' ? `<div><label class="form-label">Lama Istirahat (hari)</label><input type="number" id="lama_istirahat" class="form-input"></div>` : '' }
+                                <div><label class="form-label">Tujuan Surat</label><input type="text" id="tujuan" class="form-input"></div>
+                            </div>
+                        `;
+                        break;
+                    
+                    case 'SKL': // SURAT KETERANGAN LAHIR BARU
+                        html = `
+                            <div class="form-section">
+                                <h4 class="text-md font-semibold text-slate-600">Data Bayi</h4>
+                                <div><label class="form-label">Nama Bayi</label><input type="text" id="nama_bayi" class="form-input" required></div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div><label class="form-label">Tanggal Lahir</label><input type="date" id="tgl_lahir_bayi" class="form-input" required></div>
+                                    <div><label class="form-label">Jam Lahir</label><input type="time" id="jam_lahir" class="form-input" required></div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div><label class="form-label">Jenis Kelamin Bayi</label><select id="jenis_kelamin" class="form-input bg-white"><option>Laki-laki</option><option>Perempuan</option></select></div>
+                                    <div><label class="form-label">Jenis Kelahiran</label><select id="jenis_kelahiran" class="form-input bg-white"><option>Normal</option><option>Caesar</option><option>Dengan Alat</option><option>Lainnya</option></select></div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div><label class="form-label">Kelahiran Ke</label><input type="number" id="kelahiran_ke" class="form-input" min="1"></div>
+                                    <div><label class="form-label">Berat Badan (gram)</label><input type="number" id="bb" class="form-input"></div>
+                                </div>
+                                <div><label class="form-label">Tinggi Badan (cm)</label><input type="number" id="tb" class="form-input"></div>
+                            </div>
+                            
+                            <div class="form-section">
+                                <h4 class="text-md font-semibold text-slate-600">Data Ibu</h4>
+                                <div><label class="form-label">Nama Ibu</label><input type="text" id="nama_ibu" class="form-input" required></div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div><label class="form-label">Tanggal Lahir Ibu</label><input type="date" id="tgl_lahir_ibu" class="form-input" onchange="calculateMotherAge()"></div>
+                                    <div><label class="form-label">Umur Ibu</label><input type="text" id="umur_ibu" class="form-input bg-slate-100" readonly></div>
+                                </div>
+                                <div><label class="form-label">NIK KTP Ibu</label><input type="text" id="nik_ibu" class="form-input"></div>
+                                <div><label class="form-label">Alamat</label><textarea id="alamat" class="form-input" rows="2"></textarea></div>
+                                <div><label class="form-label">No HP</label><input type="tel" id="no_hp" class="form-input"></div>
+                            </div>
+                            
+                            <div class="form-section">
+                                <h4 class="text-md font-semibold text-slate-600">Data Ayah</h4>
+                                <div><label class="form-label">Nama Ayah</label><input type="text" id="nama_ayah" class="form-input"></div>
+                            </div>
+                            
+                            <div><label class="form-label">Tanggal Surat</label><input type="date" id="tanggal_surat" value="${today}" class="form-input" required></div>
+                        `;
+                        break;
+                    
+                    case 'SKK': case 'SKBK':
+                        html = `
+                            <div><label class="form-label">Nama Karyawan</label><input type="text" id="nama" class="form-input" required></div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div><label class="form-label">Tempat Lahir</label><input type="text" id="tempat_lahir" class="form-input"></div>
+                                <div><label class="form-label">Tanggal Lahir</label><input type="date" id="tgl_lahir" class="form-input"></div>
+                            </div>
+                            <div><label class="form-label">Jabatan</label><input type="text" id="jabatan" class="form-input"></div>
+                            <div><label class="form-label">Alamat</label><textarea id="alamat" class="form-input" rows="2"></textarea></div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div><label class="form-label">Mulai Bekerja</label><input type="date" id="tgl_mulai" class="form-input"></div>
+                                <div><label class="form-label">Berakhir Bekerja</label><input type="date" id="tgl_berakhir" class="form-input"></div>
+                            </div>
+                            <div class="flex items-center"><input type="checkbox" id="masih_bekerja" class="h-4 w-4 mr-2"><label for="masih_bekerja">Masih bekerja sampai sekarang</label></div>
+                            <div><label class="form-label">Tanggal Surat</label><input type="date" id="tanggal_surat" value="${today}" class="form-input" required></div>
+                        `;
+                        break;
+                    
+                    case 'SR':
+                        html = `
+                            ${commonPatientFields}
+                            <div class="form-section">
+                                <h4 class="text-md font-semibold text-slate-600">Detail Rujukan</h4>
+                                <div><label class="form-label">Keluhan</label><textarea id="keluhan" class="form-input" rows="2"></textarea></div>
+                                <div><label class="form-label">Diagnosis Sementara</label><input type="text" id="diagnosis" class="form-input"></div>
+                                <div><label class="form-label">Penanganan Diberikan</label><textarea id="penanganan" class="form-input" rows="2"></textarea></div>
+                                <div><label class="form-label">Fasilitas Kesehatan Tujuan</label><input type="text" id="faskes_tujuan" class="form-input"></div>
+                                <div><label class="form-label">Alamat Faskes</label><textarea id="alamat_faskes" class="form-input" rows="2"></textarea></div>
+                            </div>
+                        `;
+                        break;
+                    
+                    case 'SL':
+                         html = `
+                            <div><label class="form-label">Nama Pasien/Klien</label><input type="text" id="nama" class="form-input" required></div>
+                            <div class="form-section">
+                                <h4 class="text-md font-semibold text-slate-600">Detail Surat Lainnya</h4>
+                                <div><label class="form-label">Judul / Perihal Surat</label><input type="text" id="judul_surat" class="form-input" required></div>
+                                <div><label class="form-label">Tujuan Surat</label><input type="text" id="tujuan" class="form-input" required></div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div><label class="form-label">Tanggal Mulai</label><input type="date" id="tgl_mulai" class="form-input"></div>
+                                    <div><label class="form-label">Tanggal Berakhir</label><input type="date" id="tgl_berakhir" class="form-input"></div>
+                                </div>
+                                <div><label class="form-label">Keterangan Tambahan</label><textarea id="keterangan" class="form-input" rows="4" placeholder="Isi detail surat di sini..."></textarea></div>
+                            </div>
+                            <div><label class="form-label">Tanggal Surat</label><input type="date" id="tanggal_surat" value="${today}" class="form-input" required></div>
+                        `;
+                        break;
+                    
+                    default:
+                        html = '<p class="text-center text-slate-500">Pilih jenis surat untuk menampilkan form.</p>';
+                }
+                dynamicFieldsContainer.innerHTML = html;
+                lucide.createIcons();
+                if (type === 'SKL') {
+                    window.calculateMotherAge = calculateMotherAge;
+                }
+            };
+
+            // --- AGE CALCULATION FUNCTIONS ---
+            document.addEventListener('calculateAge', () => {
+                const birthDateInput = document.getElementById('tgl_lahir');
+                const ageInput = document.getElementById('usia');
+                if (birthDateInput && ageInput && birthDateInput.value) {
+                    const birthDate = new Date(birthDateInput.value);
+                    const today = new Date();
+                    let age = today.getFullYear() - birthDate.getFullYear();
+                    const monthDiff = today.getMonth() - birthDate.getMonth();
+                    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) age--;
+                    ageInput.value = age + ' tahun';
+                }
+            });
+
+            const calculateMotherAge = () => {
+                const motherBirthDateInput = document.getElementById('tgl_lahir_ibu');
+                const motherAgeInput = document.getElementById('umur_ibu');
+                if (motherBirthDateInput && motherAgeInput && motherBirthDateInput.value) {
+                    const birthDate = new Date(motherBirthDateInput.value);
+                    const today = new Date();
+                    let age = today.getFullYear() - birthDate.getFullYear();
+                    const monthDiff = today.getMonth() - birthDate.getMonth();
+                    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) age--;
+                    motherAgeInput.value = age + ' tahun';
+                }
+            };
+
+            // --- FORM SUBMISSION ---
+            smartForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                if (isLoading) return;
+                
+                const letterType = letterTypeSelect.value;
+                const formData = new FormData();
+                let detailData = {};
+                
+                // Collect all form data
+                const inputs = dynamicFieldsContainer.querySelectorAll('input, select, textarea');
+                inputs.forEach(input => {
+                    if (input.id && input.id !== 'tanggal_surat') {
+                        detailData[input.id] = input.value;
+                    }
+                });
+                
+                // Get patient name based on letter type
+                let patientName = '';
+                if (letterType === 'SKL') {
+                    patientName = document.getElementById('nama_bayi')?.value || '';
+                } else {
+                    patientName = document.getElementById('nama')?.value || '';
+                }
+                
+                const letterDate = document.getElementById('tanggal_surat')?.value || new Date().toISOString().split('T')[0];
+                
+                if (!patientName) {
+                    showToast('Nama pasien/bayi harus diisi.', 'error');
+                    return;
+                }
+                
+                const payload = {
+                    letterType,
+                    patientName,
+                    letterDate,
+                    detailData: JSON.stringify(detailData)
+                };
+                
+                const result = await apiCall('add', { payload });
+                if (result) {
+                    showToast(`Surat berhasil dibuat! Nomor: ${result.nomorSurat}`);
+                    smartForm.reset();
+                    letterTypeSelect.value = '';
+                    renderDynamicFields('');
+                    loadHistory();
+                    switchTab('history');
+                }
+            });
+
+            // --- HISTORY MANAGEMENT ---
+            const loadHistory = async () => {
+                historyPlaceholder.classList.remove('hidden');
+                historyList.classList.add('hidden');
+                const data = await apiCall('get');
+                if (data) {
+                    historyDataCache = data;
+                    renderHistory();
+                }
+                historyPlaceholder.classList.add('hidden');
+                historyList.classList.remove('hidden');
+            };
+
+            const renderHistory = () => {
+                if (historyDataCache.length === 0) {
+                    historyList.innerHTML = `
+                        <div class="text-center py-10 text-slate-500">
+                            <i data-lucide="file-x" class="w-12 h-12 mx-auto mb-3"></i>
+                            <p>Belum ada surat yang dibuat.</p>
+                        </div>
+                    `;
+                    lucide.createIcons();
+                    return;
+                }
+                
+                historyList.innerHTML = historyDataCache.map(item => `
+                    <div class="bg-white border border-slate-200 rounded-lg p-3 shadow-sm hover:shadow transition-shadow cursor-pointer" onclick="showDetails(${item.id})">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <span class="inline-block px-2 py-1 text-xs font-medium rounded-full ${item.jenisSurat === 'SKL' ? 'bg-blue-100 text-blue-800' : 'bg-pink-100 text-pink-800'}">${item.jenisSuratText}</span>
+                                <h3 class="font-semibold mt-1">${item.namaPasien || 'N/A'}</h3>
+                            </div>
+                            <span class="text-xs text-slate-500">${item.tanggalSuratFormatted}</span>
+                        </div>
+                        <div class="mt-2 text-sm text-slate-600">
+                            <div class="flex justify-between">
+                                <span>${item.nomorSurat}</span>
+                                <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400"></i>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+                lucide.createIcons();
+            };
+
+            // --- MODAL MANAGEMENT ---
+            window.showDetails = (id) => {
+                const item = historyDataCache.find(h => h.id === id);
+                if (!item) return;
+                
+                detailsModalTitle.textContent = `Detail ${item.jenisSuratText}`;
+                let detailsHtml = `
+                    <div class="space-y-2">
+                        <div class="flex justify-between"><span class="font-medium">Nomor Surat:</span><span>${item.nomorSurat}</span></div>
+                        <div class="flex justify-between"><span class="font-medium">Nama:</span><span>${item.namaPasien || 'N/A'}</span></div>
+                        <div class="flex justify-between"><span class="font-medium">Tanggal Surat:</span><span>${item.tanggalSuratFormatted}</span></div>
+                        <div class="flex justify-between"><span class="font-medium">Jenis Surat:</span><span>${item.jenisSuratText}</span></div>
+                `;
+                
+                if (item.detailData) {
+                    try {
+                        const detailObj = JSON.parse(item.detailData);
+                        Object.entries(detailObj).forEach(([key, value]) => {
+                            if (value && key !== 'nama' && key !== 'tanggal_surat') {
+                                const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                                detailsHtml += `<div class="flex justify-between"><span class="font-medium">${label}:</span><span>${value}</span></div>`;
+                            }
+                        });
+                    } catch (e) {
+                        console.error('Error parsing detail data:', e);
+                    }
+                }
+                
+                detailsHtml += `</div>`;
+                detailsModalContent.innerHTML = detailsHtml;
+                detailsModal.classList.remove('hidden');
+            };
+
+            // --- CHART RENDERING ---
+            const renderCharts = () => {
+                if (historyDataCache.length === 0) return;
+                
+                // Destroy existing charts
+                if (monthlyChartInstance) monthlyChartInstance.destroy();
+                if (typeChartInstance) typeChartInstance.destroy();
+                
+                // Monthly Chart
+                const monthlyCtx = document.getElementById('monthly-chart').getContext('2d');
+                const monthlyData = processMonthlyData();
+                monthlyChartInstance = new Chart(monthlyCtx, {
+                    type: 'line',
+                    data: {
+                        labels: monthlyData.labels,
+                        datasets: [{
+                            label: 'Jumlah Surat',
+                            data: monthlyData.values,
+                            borderColor: '#ec4899',
+                            backgroundColor: 'rgba(236, 72, 153, 0.1)',
+                            tension: 0.3,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                        }
+                    }
+                });
+                
+                // Type Distribution Chart
+                const typeCtx = document.getElementById('type-chart').getContext('2d');
+                const typeData = processTypeData();
+                typeChartInstance = new Chart(typeCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: typeData.labels,
+                        datasets: [{
+                            data: typeData.values,
+                            backgroundColor: ['#ec4899', '#f472b6', '#f9a8d4', '#fbcfe8', '#d1d5db', '#9ca3af', '#6b7280', '#4b5563', '#374151']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { position: 'bottom' }
+                        }
+                    }
+                });
+                
+                reportPlaceholder.classList.add('hidden');
+            };
+
+            const processMonthlyData = () => {
+                const last6Months = [];
+                const today = new Date();
+                for (let i = 5; i >= 0; i--) {
+                    const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
+                    last6Months.push(date.toLocaleDateString('id-ID', { month: 'short', year: 'numeric' }));
+                }
+                
+                const counts = new Array(6).fill(0);
+                historyDataCache.forEach(item => {
+                    const itemDate = new Date(item.tanggalSurat);
+                    const monthDiff = (today.getFullYear() - itemDate.getFullYear()) * 12 + (today.getMonth() - itemDate.getMonth());
+                    if (monthDiff >= 0 && monthDiff < 6) {
+                        counts[5 - monthDiff]++;
+                    }
+                });
+                
+                return { labels: last6Months, values: counts };
+            };
+
+            const processTypeData = () => {
+                const typeCounts = {};
+                historyDataCache.forEach(item => {
+                    typeCounts[item.jenisSuratText] = (typeCounts[item.jenisSuratText] || 0) + 1;
+                });
+                
+                const labels = Object.keys(typeCounts);
+                const values = Object.values(typeCounts);
+                return { labels, values };
+            };
+
+            // --- EVENT LISTENERS ---
+            tabs.app.addEventListener('click', () => switchTab('app'));
+            tabs.history.addEventListener('click', () => switchTab('history'));
+            tabs.report.addEventListener('click', () => switchTab('report'));
+            letterTypeSelect.addEventListener('change', (e) => renderDynamicFields(e.target.value));
+            refreshHistoryBtn.addEventListener('click', loadHistory);
+            closeDetailsModalBtn.addEventListener('click', () => detailsModal.classList.add('hidden'));
+            detailsModal.addEventListener('click', (e) => {
+                if (e.target === detailsModal) detailsModal.classList.add('hidden');
+            });
+
+            // --- INITIALIZATION ---
+            lucide.createIcons();
+            loadHistory();
+            switchTab('app');
+        });
+    </script>
+</body>
+</html>
